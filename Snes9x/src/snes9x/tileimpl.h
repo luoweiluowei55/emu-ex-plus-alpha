@@ -10,6 +10,7 @@
 #include "snes9x.h"
 #include "ppu.h"
 #include "tile.h"
+#include "fe5render.h"
 
 
 
@@ -92,6 +93,15 @@ namespace TileImpl {
 
 		alwaysinline void GetCachedTile()
 		{
+			if (FE5Render::GlyphPending())
+			{
+				// FE5 menu hanzi engine ("entry-is-glyph"): the tilemap entry was a
+				// magic entry translated by FE5Render::TranslateEntry - serve the
+				// pixel buffer rendered from the ROM font table, bypassing VRAM.
+				pCache = FE5Render::GlyphBuffer64();
+				TileNumber = 0;
+				return;
+			}
 			TileAddr = BG.TileAddress + ((Tile & 0x3ff) << BG.TileShift);
 			if (Tile & 0x100)
 				TileAddr += BG.NameSelect;
@@ -113,6 +123,8 @@ namespace TileImpl {
 
 		alwaysinline bool IsBlankTile() const
 		{
+			if (FE5Render::GlyphPending())
+				return false;
 			return ((Tile & H_FLIP) ? BG.BufferedFlip[TileNumber] : BG.Buffered[TileNumber]) == BLANK_TILE;
 		}
 

@@ -13,6 +13,7 @@
 #include "movie.h"
 #include "screenshot.h"
 #include "display.h"
+#include "fe5render.h"
 
 extern struct SCheatData		Cheat;
 
@@ -945,6 +946,9 @@ static void DrawBackground (int bg, uint8 Zh, uint8 Zl)
 
 				Offset -= l * PixWidth;
 				Tile = READ_WORD(t);
+				if (bg == 2 && BG.TileShift == 4)
+					Tile = FE5Render::TranslateEntry(Tile, HTile, Y,
+						PPU.BG[2].SCBase, PPU.BG[2].NameBase, (const uint16_t *) Memory.VRAM);
 				GFX.Z1 = GFX.Z2 = (Tile & 0x2000) ? Zh : Zl;
 
 				if (BG.TileSizeV == 16)
@@ -982,6 +986,9 @@ static void DrawBackground (int bg, uint8 Zh, uint8 Zl)
 			while (Width >= 8)
 			{
 				Tile = READ_WORD(t);
+				if (bg == 2 && BG.TileShift == 4)
+					Tile = FE5Render::TranslateEntry(Tile, HTile, Y,
+						PPU.BG[2].SCBase, PPU.BG[2].NameBase, (const uint16_t *) Memory.VRAM);
 				GFX.Z1 = GFX.Z2 = (Tile & 0x2000) ? Zh : Zl;
 
 				if (BG.TileSizeV == 16)
@@ -1019,6 +1026,9 @@ static void DrawBackground (int bg, uint8 Zh, uint8 Zl)
 			if (Width)
 			{
 				Tile = READ_WORD(t);
+				if (bg == 2 && BG.TileShift == 4)
+					Tile = FE5Render::TranslateEntry(Tile, HTile, Y,
+						PPU.BG[2].SCBase, PPU.BG[2].NameBase, (const uint16_t *) Memory.VRAM);
 				GFX.Z1 = GFX.Z2 = (Tile & 0x2000) ? Zh : Zl;
 
 				if (BG.TileSizeV == 16)

@@ -12,6 +12,7 @@
 #include "sdd1.h"
 #include "srtc.h"
 #include "controls.h"
+#include "fe5menu.h"
 #include "movie.h"
 #include "display.h"
 #ifdef NETPLAY_SUPPORT
@@ -228,14 +229,25 @@ void S9xSetPPU (uint8 Byte, uint16 Address)
 				return;
 			}
 		}
-		else
-		{
-			// S9xSetPPU() is called to read from $21xx
-			// Take care of DMA wrapping
-			if (Address > 0x21ff)
-				Address = 0x2100 + (Address & 0xff);
+			else
+			{
+				// S9xSetPPU() is called to read from $21xx
+				// Take care of DMA wrapping
+				if (Address > 0x21ff)
+					Address = 0x2100 + (Address & 0xff);
+			}
 		}
+
+	// FE5 menu hanzi engine: CPU register-page mirror window $2FA0-$2FA6 (open-bus
+	// on real hardware maps this to B-bus $21A0-$21A6). The stub writes the code
+	// and reads the resolved entries back immediately - interception must be
+	// synchronous. See fe5menu.h for the protocol table.
+	if (Address >= 0x2FA0 && Address <= 0x2FA6)
+	{
+		if (FE5Menu::HandleWrite(Address, Byte))
+			return;
 	}
+
 
 #ifdef DEBUGGER
 	if (CPU.InHDMA)
@@ -990,6 +1002,10 @@ void S9xSetPPU (uint8 Byte, uint16 Address)
 uint8 S9xGetPPU (uint16 Address)
 {
 	// MAP_PPU: $2000-$3FFF
+	// FE5 menu hanzi engine read-back window (top/bottom entry latches).
+	uint8_t fe5byte;
+	if (Address >= 0x2FA0 && Address <= 0x2FA6 && FE5Menu::HandleRead(Address, &fe5byte))
+		return (fe5byte);
 	if (Settings.MSU1 && (Address & 0xfff8) == 0x2000)
 		return (S9xMSU1ReadPort(Address & 7));
 	else
