@@ -25,26 +25,35 @@ namespace FE5Render
 		uint16_t gateTma, uint16_t chrBaseWords, const uint16_t* vram)
 	{
 		s_pending = false;
+		//CNREP/CNRPG/CNRPH label replacement FIRST: the font-page screens' fixed
+		//Japanese labels are BAKED, non-magic entries, so this lookup must run
+		//before any bit15 test - MesenCE applies it ahead of the magic branch and
+		//keys each record on the FULL entry value (palette/flip bits included).
+		const uint8_t* half = FE5Menu::CnrepLookup((uint16_t)tile, column, scanline,
+			gateTma, chrBaseWords, vram);
+		if(half != nullptr) {
+			ConvertHalfToCache(half);
+			s_pending = true;
+			//Mesen leaves TilemapData exactly as the game wrote it on a CNREP hit
+			//(attrs incl. flips flow through); GetCachedTile serves the record's
+			//16B half from the glyph buffer.
+			return tile;
+		}
 		if(!(tile & 0x8000)) {
 			return tile;
 		}
-		//CNREP label replacement first: keys match the FULL entry (palette/flip bits).
-		const uint8_t* half = FE5Menu::CnrepLookup((uint16_t)tile, column, scanline,
-			gateTma, chrBaseWords, vram);
+		uint32_t glyph = 0, h = 0;
+		int cls = FE5Menu::ClassifyEntry((uint16_t)tile, &glyph, &h);
+		if(cls == 1) {
+			//ENTEX-reserved: native decoration, its flips are legitimate.
+			return tile;
+		}
+		if(cls != 2) {
+			return tile;
+		}
+		half = FE5Menu::FontHalf(glyph, h);
 		if(half == nullptr) {
-			uint32_t glyph = 0, h = 0;
-			int cls = FE5Menu::ClassifyEntry((uint16_t)tile, &glyph, &h);
-			if(cls == 1) {
-				//ENTEX-reserved: native decoration, its flips are legitimate.
-				return tile;
-			}
-			if(cls != 2) {
-				return tile;
-			}
-			half = FE5Menu::FontHalf(glyph, h);
-			if(half == nullptr) {
-				return tile;
-			}
+			return tile;
 		}
 		ConvertHalfToCache(half);
 		s_pending = true;
