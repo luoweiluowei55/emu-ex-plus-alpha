@@ -55,6 +55,8 @@ target_sources(s9xp PRIVATE
 	snes9x/tileimpl-h2x1.cpp
 	snes9x/tileimpl-n1x1.cpp
 	snes9x/tileimpl-n2x1.cpp
+	snes9x/fe5menu.cpp
+	snes9x/fe5render.cpp
 	snes9x/apu/apu.cpp
 	snes9x/apu/bapu/dsp/sdsp.cpp
 	snes9x/apu/bapu/smp/smp.cpp

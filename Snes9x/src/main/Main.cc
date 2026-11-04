@@ -8,6 +8,7 @@ module;
 #include <display.h>
 #include <snapshot.h>
 #include <cheats.h>
+#include <fe5menu.h>
 #ifndef SNES9X_VERSION_1_4
 #include <apu/bapu/snes/snes.hpp>
 #include <apu/apu.h>
@@ -270,6 +271,29 @@ void Snes9xSystem::loadContent(IO &io, EmuSystemCreateParams, OnLoadProgressDele
 	setupSNESInput(EmuApp::get(appContext()).defaultVController());
 	saveStateSize = S9xFreezeSize();
 	IPPU.RenderThisFrame = TRUE;
+
+	// FE5 menu hanzi engine ("entry-is-glyph", ported from MesenCE): tables are
+	// located by magic scan in the headerless ROM image; the hooks hand the
+	// engine the live PPU facts it needs (see fe5menu.h). Memory.ROMSize is
+	// uint8 Mbit in this fork - CalculatedSize is the image size in bytes.
+	static FE5Menu::HostHooks fe5Hooks;
+	fe5Hooks.getBgMode = []() -> uint8_t { return (uint8_t) PPU.BGMode; };
+	fe5Hooks.getLayerChrBase = [](int layer) -> uint16_t { return PPU.BG[layer].NameBase; };
+	fe5Hooks.vram = (uint16_t *) Memory.VRAM;
+	fe5Hooks.invalidateTile = [](uint32_t tileNumber)
+	{
+		// mirrors REGISTER_2118's 2bpp invalidation (ppu.h)
+		if (tileNumber < MAX_2BIT_TILES)
+		{
+			IPPU.TileCached[TILE_2BIT][tileNumber] = FALSE;
+			IPPU.TileCached[TILE_2BIT_EVEN][tileNumber] = FALSE;
+			IPPU.TileCached[TILE_2BIT_EVEN][(tileNumber - 1) & (MAX_2BIT_TILES - 1)] = FALSE;
+			IPPU.TileCached[TILE_2BIT_ODD][tileNumber] = FALSE;
+			IPPU.TileCached[TILE_2BIT_ODD][(tileNumber - 1) & (MAX_2BIT_TILES - 1)] = FALSE;
+		}
+	};
+	FE5Menu::SetHostHooks(&fe5Hooks);
+	FE5Menu::Init(Memory.ROM, Memory.CalculatedSize);
 }
 
 void Snes9xSystem::configAudioRate(FrameRate outputFrameRate, int outputRate)
