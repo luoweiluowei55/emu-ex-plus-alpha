@@ -5,7 +5,7 @@ on: [push, pull_request]
 jobs:
   build:
     name: Build base
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
     - name: Checkout emu-ex-plus-alpha repo
       uses: actions/checkout@v4
@@ -27,8 +27,10 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install -y --no-install-recommends autoconf automake autopoint bash gcc-arm-linux-gnueabi file gawk gettext git libtool libtool-bin make nasm pkg-config unzip wget
-    - name: Install Latest CMake
+    - name: Install CMake 4.2.4 (2026-04-13 recipe)
       uses: lukka/get-cmake@latest
+      with:
+        cmakeVersion: '4.2.4'
     - name: Set up JDK 21
       uses: actions/setup-java@v4
       with:
@@ -71,7 +73,7 @@ jobs:
   build_images:
     name: Build images
     needs: [build]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     strategy:
       matrix:
         image: ["2600.emu", "C64.emu", "GBA.emu", "GBC.emu", "Lynx.emu", "MD.emu", "MSX.emu", "NEO.emu", "NES.emu", "NGP.emu", "PCE.emu", "Snes9x", "Snes9x-1.43", "Swan.emu", "Saturn.emu"]
@@ -80,8 +82,10 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install -y --no-install-recommends autoconf automake autopoint bash gcc-arm-linux-gnueabi file gawk gettext git libtool libtool-bin make nasm pkg-config unzip wget
-    - name: Install Latest CMake
+    - name: Install CMake 4.2.4 (2026-04-13 recipe)
       uses: lukka/get-cmake@latest
+      with:
+        cmakeVersion: '4.2.4'
     - name: Set up JDK 21
       uses: actions/setup-java@v4
       with:
@@ -197,7 +201,7 @@ jobs:
 
   release:
     name: Release
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: [build, build_images]
     if: github.ref == 'refs/heads/master'
     steps:
