@@ -29,7 +29,14 @@ namespace FE5Render
 		//Japanese labels are BAKED, non-magic entries, so this lookup must run
 		//before any bit15 test - MesenCE applies it ahead of the magic branch and
 		//keys each record on the FULL entry value (palette/flip bits included).
-		const uint8_t* half = FE5Menu::CnrepLookup((uint16_t)tile, column, scanline,
+		//Mesen scanline semantics: the CNRPH/CNRPG sl windows were captured from
+		//MesenCE GetChrData traces, which log _scanline (the PPU line counter,
+		//V=0-based) while the same pixel row renders at Snes9x display line
+		//Y = that value - 1. Key the lookup on the Mesen numbering (Y + 1), or
+		//every window's first line falls out by one and the bottom half's top
+		//row (e.g. the cun-bar of shou on the roster header) silently falls
+		//back to the native font-page tile.
+		const uint8_t* half = FE5Menu::CnrepLookup((uint16_t)tile, column, scanline + 1,
 			gateTma, chrBaseWords, vram);
 		if(half != nullptr) {
 			ConvertHalfToCache(half);
